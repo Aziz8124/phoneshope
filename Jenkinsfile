@@ -9,19 +9,17 @@ pipeline {
         }
         stage('Build') {
             steps {
-                // استخدم هنا الأمر المناسب للبناء، مثلا Maven أو Gradle
-                sh './mvnw clean package'  // لو تستخدم Maven Wrapper
+                bat 'mvnw clean package'
             }
         }
         stage('Test') {
             steps {
-                sh './mvnw test'
+                bat 'mvnw test'
             }
         }
         stage('Deploy') {
             steps {
-                echo 'Deploying...'
-                // ضع هنا أوامر النشر أو التحزيم حسب ما تريد
+                echo 'Deploying (placeholder step)...'
             }
         }
     }
