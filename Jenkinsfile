@@ -6,12 +6,12 @@ pipeline {
         jdk 'Java_17'       // تأكد أن Java 17 معرف مسبقًا في Jenkins
     }
 
-    stage('Checkout Code') {
-        steps {
-            git branch: 'main', url: 'https://github.com/Aziz8124/phoneshope.git'
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Aziz8124/phoneshope.git'
+            }
         }
-    }
-
 
         stage('Build with Maven') {
             steps {
