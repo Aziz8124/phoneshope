@@ -1,28 +1,34 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'Maven_3.8.8' // تأكد أن اسم الأدوات في Jenkins مطابق لما هو معرف
+        jdk 'Java_17'       // تأكد أن Java 17 معرف مسبقًا في Jenkins
+    }
+
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/Aziz8124/phoneshope.git'
+                git 'https://github.com/Aziz8124/phoneshope.git'
             }
         }
 
-        stage('Build') {
+        stage('Build with Maven') {
             steps {
-                bat 'mvn clean package'
+                sh 'mvn clean package'
             }
         }
 
-        stage('Test') {
+        stage('Archive Artifact') {
             steps {
-                bat 'mvn test'
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
 
-        stage('Deploy') {
+        // اختياري: يمكنك تشغيل التطبيق
+        stage('Run App') {
             steps {
-                echo '🔧 نشر التطبيق...'
+                sh 'java -jar target/*.jar &'
             }
         }
     }
