@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven_3.8.8'
-        jdk 'Java_17'
+        maven 'Maven_3.8.8' // تأكد أن الاسم مطابق لما هو مضاف في Jenkins
+        jdk 'Java_17'       // تأكد أن JDK 17 معرف في Jenkins
     }
 
     stages {
@@ -15,19 +15,19 @@ pipeline {
 
         stage('Build with Maven') {
             steps {
-                sh 'mvn clean package'
+                bat 'mvn clean package'
             }
         }
 
         stage('Archive Artifact') {
             steps {
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                archiveArtifacts artifacts: 'target\\*.jar', fingerprint: true
             }
         }
 
         stage('Run App') {
             steps {
-                sh 'java -jar target/*.jar &'
+                bat 'start /B java -jar target\\phoneshope-0.0.1-SNAPSHOT.jar'
             }
         }
     }
