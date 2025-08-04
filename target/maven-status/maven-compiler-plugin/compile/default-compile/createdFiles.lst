@@ -1,0 +1,5 @@
+com\phoneshope\controller\HomeController.class
+com\phoneshope\model\Phone.class
+com\phoneshope\controller\AdminProductController.class
+com\phoneshope\PhoneShopeApplication.class
+com\phoneshope\model\User.class

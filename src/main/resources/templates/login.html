@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>تسجيل الدخول - PhoneShope</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <h2 class="text-center mb-4">تسجيل الدخول</h2>
+    <form action="/login" method="post" class="mx-auto" style="max-width: 400px;">
+        <div class="mb-3">
+            <label for="username" class="form-label">اسم المستخدم أو البريد</label>
+            <input type="text" class="form-control" id="username" name="username" required>
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">كلمة المرور</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <div class="mb-3 text-center">
+            <img src="/images/captcha.jpg" alt="Captcha" style="width: 100%;">
+        </div>
+        <button type="submit" class="btn btn-dark w-100">دخول</button>
+    </form>
+</div>
+</body>
+</html>
