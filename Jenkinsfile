@@ -7,19 +7,22 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/Aziz8124/phoneshope.git'
             }
         }
+
         stage('Build') {
             steps {
-                bat 'mvnw clean package'
+                bat 'mvn clean package'
             }
         }
+
         stage('Test') {
             steps {
-                bat 'mvnw test'
+                bat 'mvn test'
             }
         }
+
         stage('Deploy') {
             steps {
-                echo 'Deploying (placeholder step)...'
+                echo '🔧 نشر التطبيق...'
             }
         }
     }
