@@ -7,10 +7,10 @@ pipeline {
     }
 
     stage('Checkout Code') {
-    steps {
-        git branch: 'main', url: 'https://github.com/Aziz8124/phoneshope.git'
+        steps {
+            git branch: 'main', url: 'https://github.com/Aziz8124/phoneshope.git'
+        }
     }
-}
 
 
         stage('Build with Maven') {
