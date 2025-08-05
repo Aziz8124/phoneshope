@@ -2,33 +2,66 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven_3.8.8' // تأكد أن الاسم مطابق لما هو مضاف في Jenkins
-        jdk 'Java_17'       // تأكد أن JDK 17 معرف في Jenkins
+        maven 'Maven_3.8.8'    // تأكد أن المسمى مطابق لما هو معرف في Jenkins
+        jdk 'Java_17'          // تأكد أن Java 17 معرف في Jenkins
     }
 
     stages {
+
+        // 🧩 1. جلب الكود من GitHub
         stage('Checkout Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/Aziz8124/phoneshope.git'
             }
         }
 
-        stage('Build with Maven') {
+        // 🛠️ 2. بناء المشروع باستخدام Maven
+        stage('Build') {
             steps {
                 bat 'mvn clean package'
             }
         }
 
+        // 🧪 3. تشغيل الاختبارات الآلية
+        stage('Test') {
+            steps {
+                bat 'mvn test'
+            }
+        }
+
+        // 🔐 4. فحص الأمان (ثغرات في المكتبات)
+        stage('Security Scan') {
+            steps {
+                bat 'mvn org.owasp:dependency-check-maven:check'
+            }
+        }
+
+        // 📦 5. أرشفة ملف JAR الناتج
         stage('Archive Artifact') {
             steps {
                 archiveArtifacts artifacts: 'target\\*.jar', fingerprint: true
             }
         }
 
-        stage('Run App') {
+        // 🚀 6. تشغيل التطبيق تلقائياً بعد البناء
+        stage('Deploy') {
             steps {
                 bat 'start /B java -jar target\\phoneshope-0.0.1-SNAPSHOT.jar'
             }
+        }
+    }
+
+    // 📩 7. إرسال إشعار بعد النجاح أو الفشل
+    post {
+        success {
+            mail to: 'your_email@example.com',
+                 subject: "✅ Build Success: ${env.JOB_NAME}",
+                 body: "Build #${env.BUILD_NUMBER} completed successfully."
+        }
+        failure {
+            mail to: 'your_email@example.com',
+                 subject: "❌ Build Failed: ${env.JOB_NAME}",
+                 body: "Build #${env.BUILD_NUMBER} failed. Check Jenkins for details."
         }
     }
 }
