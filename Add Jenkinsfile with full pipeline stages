@@ -7,28 +7,54 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/Aziz8124/phoneshope.git'
+                git branch: 'main',
+                    url: 'https://github.com/Aziz8124/phoneshope.git'
             }
         }
 
-        stage('Build with Maven') {
+        stage('Build') {
             steps {
-                bat 'mvn clean package'
+                bat 'mvn clean compile'
             }
         }
 
-        stage('Archive Artifact') {
+        stage('Run Tests') {
             steps {
-                archiveArtifacts artifacts: 'target\\*.jar', fingerprint: true
+                bat 'mvn test'
+            }
+            post {
+                always {
+                    junit 'target\\surefire-reports\\*.xml' // تقارير الاختبارات
+                }
             }
         }
 
-        stage('Run App') {
+        stage('Package') {
             steps {
-                bat 'start /B java -jar target\\phoneshope-0.0.1-SNAPSHOT.jar'
+                bat 'mvn package -DskipTests'
             }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo '⚡ نشر التطبيق... (هنا تضع خطوات النشر الخاصة فيك)'
+                // مثال: bat 'start /B java -jar target\\phoneshope-0.0.1-SNAPSHOT.jar'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Pipeline نجح!'
+            // مثال على إشعار بريد أو Slack
+            // mail to: 'team@example.com', subject: 'Build Success', body: 'The build passed!'
+        }
+        failure {
+            echo '❌ Pipeline فشل!'
+            // mail to: 'team@example.com', subject: 'Build Failed', body: 'The build failed, check Jenkins logs.'
         }
     }
 }
