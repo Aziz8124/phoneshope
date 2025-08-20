@@ -2,68 +2,52 @@ pipeline {
     agent any
 
     tools {
-        jdk 'Java_17'        // اسم JDK معرف في Jenkins
-        maven 'Maven_3.8.8'  // اسم Maven معرف في Jenkins
+        maven 'Maven_3.8.8'  // تأكد الاسم مطابق لما موجود في Jenkins
+        jdk 'Java_17'        // تأكد الاسم مطابق لما موجود في Jenkins
+    }
+
+    environment {
+        // البريد الإلكتروني لإشعارات Jenkins
+        MAIL_RECIPIENT = "azoz.sh2003@gmail.com"
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
-                echo "جاري سحب الكود من Git..."
-                git branch: 'main', url: 'https://github.com/username/repo.git'
+                // سحب الكود من GitHub باستخدام Personal Access Token
+                git branch: 'main',
+                    url: 'https://github.com/Aziz8124/phoneshope.git',
+                    credentialsId: 'GITHUB_CREDENTIALS_ID' // استبدل بالـ ID الصحيح
             }
         }
 
         stage('Build') {
             steps {
-                echo "بدء عملية البناء..."
-                // أوامر البناء لويندوز
-                bat 'mvn clean package'
+                echo 'Building the project...'
+                bat 'mvn clean package'  // على ويندوز استخدم bat
             }
         }
 
         stage('Test') {
             steps {
-                echo "تشغيل الاختبارات..."
+                echo 'Running tests...'
                 bat 'mvn test'
             }
         }
     }
 
     post {
-        always {
-            // ينفذ بعد كل Build سواء نجح أو فشل
-            mail to: 'azoz.sh2003@gmail.com',
-                 subject: "Jenkins Build Notification: ${currentBuild.fullDisplayName}",
-                 body: """مرحبا،
-Build رقم ${currentBuild.number} على المشروع ${env.JOB_NAME} انتهى.
-الحالة: ${currentBuild.currentResult}
-
-تحيات،
-Jenkins"""
-        }
-
-        failure {
-            // ينفذ فقط إذا فشل الـ Build
-            mail to: 'azoz.sh2003@gmail.com',
-                 subject: "⚠️ Jenkins Build FAILED: ${currentBuild.fullDisplayName}",
-                 body: """مرحبا،
-Build رقم ${currentBuild.number} على المشروع ${env.JOB_NAME} فشل.
-يرجى المراجعة فوراً.
-
-تحيات،
-Jenkins"""
-        }
-
         success {
-            // ينفذ فقط إذا نجح الـ Build
-            mail to: 'azoz.sh2003@gmail.com',
-                 subject: "✅ Jenkins Build SUCCESS: ${currentBuild.fullDisplayName}",
-                 body: """مرحبا،
-Build رقم ${currentBuild.number} على المشروع ${env.JOB_NAME} نجح بنجاح.
-
-تحيات،
-Jenkins"""
+            echo 'Build successful!'
+            mail to: "${MAIL_RECIPIENT}",
+                 subject: "Jenkins Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: "Good news! The build was successful.\nCheck console output at: ${env.BUILD_URL}"
+        }
+        failure {
+            echo 'Build failed!'
+            mail to: "${MAIL_RECIPIENT}",
+                 subject: "Jenkins Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: "Build failed. Please check the console output at: ${env.BUILD_URL}"
         }
     }
 }
