@@ -2,61 +2,68 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven_3.8.8'   // تأكد أن الاسم مطابق لما هو مضاف في Jenkins
-        jdk 'Java_17'         // تأكد أن JDK 17 معرف في Jenkins
+        jdk 'Java_17'        // اسم JDK معرف في Jenkins
+        maven 'Maven_3.8.8'  // اسم Maven معرف في Jenkins
     }
 
     stages {
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Aziz8124/phoneshope.git'
+                echo "جاري سحب الكود من Git..."
+                git branch: 'main', url: 'https://github.com/username/repo.git'
             }
         }
 
-        stage('Build with Maven') {
+        stage('Build') {
             steps {
-                bat 'mvn clean compile'
+                echo "بدء عملية البناء..."
+                // أوامر البناء لويندوز
+                bat 'mvn clean package'
             }
         }
 
-        stage('Run Tests') {
+        stage('Test') {
             steps {
-                script {
-                    def testExists = fileExists('src/test/java')
-                    if (testExists) {
-                        bat 'mvn test'
-                    } else {
-                        echo 'لا توجد اختبارات، تخطي هذه المرحلة.'
-                    }
-                }
-            }
-        }
-
-        stage('Package') {
-            steps {
-                bat 'mvn package'
-            }
-        }
-
-        stage('Archive Artifact') {
-            steps {
-                archiveArtifacts artifacts: 'target\\*.jar', fingerprint: true
-            }
-        }
-
-        stage('Run App') {
-            steps {
-                bat 'start /B java -jar target\\phoneshope-0.0.1-SNAPSHOT.jar'
+                echo "تشغيل الاختبارات..."
+                bat 'mvn test'
             }
         }
     }
 
     post {
-        success {
-            echo '✅ Pipeline اكتملت بنجاح!'
+        always {
+            // ينفذ بعد كل Build سواء نجح أو فشل
+            mail to: 'azoz.sh2003@gmail.com',
+                 subject: "Jenkins Build Notification: ${currentBuild.fullDisplayName}",
+                 body: """مرحبا،
+Build رقم ${currentBuild.number} على المشروع ${env.JOB_NAME} انتهى.
+الحالة: ${currentBuild.currentResult}
+
+تحيات،
+Jenkins"""
         }
+
         failure {
-            echo '❌ Pipeline فشلت، تحقق من الأخطاء أعلاه.'
+            // ينفذ فقط إذا فشل الـ Build
+            mail to: 'azoz.sh2003@gmail.com',
+                 subject: "⚠️ Jenkins Build FAILED: ${currentBuild.fullDisplayName}",
+                 body: """مرحبا،
+Build رقم ${currentBuild.number} على المشروع ${env.JOB_NAME} فشل.
+يرجى المراجعة فوراً.
+
+تحيات،
+Jenkins"""
+        }
+
+        success {
+            // ينفذ فقط إذا نجح الـ Build
+            mail to: 'azoz.sh2003@gmail.com',
+                 subject: "✅ Jenkins Build SUCCESS: ${currentBuild.fullDisplayName}",
+                 body: """مرحبا،
+Build رقم ${currentBuild.number} على المشروع ${env.JOB_NAME} نجح بنجاح.
+
+تحيات،
+Jenkins"""
         }
     }
 }
