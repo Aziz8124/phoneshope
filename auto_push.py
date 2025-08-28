@@ -2,19 +2,38 @@ import time
 import subprocess
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+import os
 
 # مسار مجلد المشروع
 PROJECT_PATH = r"C:\Users\azozs\Desktop\PhoneShope_Final"
 
+# الملفات/المجلدات لتجاهلها
+IGNORE_PATHS = ['.idea', 'target', '.git', '__pycache__']
+
 class AutoPushHandler(FileSystemEventHandler):
     def on_modified(self, event):
-        # تجاهل الملفات المؤقتة
+        # تجاهل الملفات أو المجلدات المحددة
+        if any(ignore in event.src_path for ignore in IGNORE_PATHS):
+            return
         if event.src_path.endswith(".swp") or event.src_path.endswith("~"):
             return
+
         print(f"Detected change in: {event.src_path}")
         try:
+            # Git add
             subprocess.run(["git", "add", "."], cwd=PROJECT_PATH, check=True)
-            subprocess.run(["git", "commit", "-m", "Auto-commit changes"], cwd=PROJECT_PATH, check=True)
+
+            # Git commit
+            result = subprocess.run(
+                ["git", "commit", "-m", "Auto-commit changes"], 
+                cwd=PROJECT_PATH, capture_output=True, text=True
+            )
+            
+            if "nothing to commit" in result.stdout:
+                print("No changes to commit.\n")
+                return
+
+            # Git push
             subprocess.run(["git", "push"], cwd=PROJECT_PATH, check=True)
             print("Changes pushed to GitHub successfully!\n")
         except subprocess.CalledProcessError as e:
