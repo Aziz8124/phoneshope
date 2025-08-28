@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="ar">
 <head>
     <meta charset="UTF-8">
     <title>PhoneShope - الصفحة الرئيسية</title>
@@ -7,17 +7,22 @@
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="#">📱 PhoneShope</a>
-    <div class="d-flex">
-      <a href="/login" class="btn btn-outline-light me-2">تسجيل الدخول</a>
-      <a href="/register" class="btn btn-outline-warning">إنشاء حساب</a>
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">📱 PhoneShope</a>
+        <div class="d-flex align-items-center">
+            <span th:if="${userName != null}" class="text-light me-3">مرحباً، <b th:text="${userName}">المستخدم</b></span>
+            <a href="/logout" th:if="${userName != null}" class="btn btn-outline-danger me-2">تسجيل خروج</a>
+            <a href="/login" th:if="${userName == null}" class="btn btn-outline-light me-2">تسجيل الدخول</a>
+            <a href="/register" th:if="${userName == null}" class="btn btn-outline-warning">إنشاء حساب</a>
+        </div>
     </div>
-  </div>
 </nav>
 
 <div class="container mt-4">
     <h2 class="text-center mb-4">📦 هواتف للبيع</h2>
+
+    <div th:if="${guestWarning != null}" class="alert alert-warning text-center" role="alert" th:text="${guestWarning}"></div>
+
     <div class="row">
         <div class="col-md-4" th:each="phone : ${phones}">
             <div class="card mb-4">
@@ -30,10 +35,6 @@
         </div>
     </div>
 
-    <!-- ✅ روابط نصية إضافية -->
-    <div class="text-center mt-5">
-        <a href="/login">تسجيل الدخول</a> | <a href="/register">إنشاء حساب</a>
-    </div>
 </div>
 </body>
 </html>

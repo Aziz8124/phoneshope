@@ -15,7 +15,7 @@ public class User {
         this.password = password;
     }
 
-
+    // Getter methods
     public String getName() {
         return name;
     }

@@ -14,6 +14,7 @@ public class Phone {
         this.imageUrl = imageUrl;
     }
 
+    // Getters and setters
     public String getName() {
         return name;
     }
