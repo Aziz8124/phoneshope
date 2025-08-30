@@ -7,9 +7,8 @@ pipeline {
     }
 
     environment {
-        // البريد الإلكتروني لإشعارات Jenkins
         MAIL_RECIPIENT = "azoz.sh2003@gmail.com"
-        SONARQUBE_ENV = 'SonarQubeServer' // الاسم اللي سجلته في Jenkins → Manage Jenkins → Configure System
+        SONARQUBE_ENV = 'MySonarQube' // <-- الاسم الصحيح
     }
 
     stages {
