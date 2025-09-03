@@ -64,7 +64,7 @@ pipeline {
                 echo 'Running OWASP ZAP DAST scan...'
 
                 startZap(
-                    zapHome: 'C:\\Program Files\\ZAP\\Zed Attack Proxy\\ZAP.exe', // المسار الصحيح
+                    zapHome: 'C:\\Program Files\\ZAP\\Zed Attack Proxy\\zap.bat', // تم تعديل المسار فقط
                     port: 8090,
                     host: '127.0.0.1',
                     timeout: 120,
