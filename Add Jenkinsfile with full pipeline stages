@@ -43,7 +43,7 @@ pipeline {
             }
         }
 
-        stage('Quality Gate') {
+        stage("Quality Gate") {
             steps {
                 timeout(time: 1, unit: 'HOURS') {
                     waitForQualityGate abortPipeline: true
@@ -55,7 +55,7 @@ pipeline {
             steps {
                 echo 'Starting PhoneShope app in background...'
                 bat "start /B mvn spring-boot:run"
-                sleep(time: 20, unit: 'SECONDS')
+                sleep(time: 20, unit: 'SECONDS')  // وقت للتطبيق ليشتغل
             }
         }
 
@@ -78,15 +78,19 @@ pipeline {
                 runZapCrawler(
                     host: 'http://localhost:8080',
                     maxChildren: 10,
-                    contextName: 'Default Context',
                     contextId: 0,
-                    subtreeOnly: false,
+                    contextName: 'Default Context',
                     recurse: true,
+                    subtreeOnly: false,
                     userId: 0
                 )
 
                 runZapAttack(
                     contextId: 0,
+                    scanPolicyName: 'Default Policy',
+                    inScopeOnly: true,
+                    method: 'GET',
+                    postData: '',
                     recurse: true,
                     userId: 0
                 )
