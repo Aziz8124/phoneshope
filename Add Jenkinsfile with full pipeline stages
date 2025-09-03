@@ -64,7 +64,8 @@ pipeline {
                 echo 'Running OWASP ZAP DAST scan...'
 
                 startZap(
-                    zapHome: 'C:/ProgramData/Microsoft/Windows/Start Menu/Programs/ZAP',
+                    zapHome: '"C:\\Program Files\\ZAP\\Zed Attack Proxy\\ZAP.exe" -daemon -host 127.0.0.1 -port 8090 -dir "C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\PhoneShope-Automation\\zaptemp" -config api.disablekey=true -config api.addrs.addr.regex=true -config api.addrs.addr.name=.* -config connection.timeoutInSecs=600
+',
                     port: 8090,
                     host: '127.0.0.1',
                     timeout: 120,
