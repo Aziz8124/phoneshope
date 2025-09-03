@@ -45,8 +45,28 @@ pipeline {
 
         stage("Quality Gate") {
             steps {
-                timeout(time: 1, unit: 'HOURS') {
-                    waitForQualityGate abortPipeline: true
+                script {
+                    def maxRetries = 12  // عدد مرات المحاولة
+                    def waitTime = 10    // بالثواني بين المحاولات
+                    def qgStatus = null
+
+                    for (int i = 0; i < maxRetries; i++) {
+                        try {
+                            qgStatus = waitForQualityGate(abortPipeline: false)
+                            if (qgStatus.status != 'PENDING') {
+                                break
+                            }
+                        } catch (err) {
+                            echo "Quality Gate not ready yet. Retry ${i+1}/${maxRetries}"
+                        }
+                        sleep(waitTime)
+                    }
+
+                    if (qgStatus == null || qgStatus.status != 'OK') {
+                        error "Quality Gate failed or timed out: ${qgStatus?.status}"
+                    } else {
+                        echo "Quality Gate passed!"
+                    }
                 }
             }
         }
