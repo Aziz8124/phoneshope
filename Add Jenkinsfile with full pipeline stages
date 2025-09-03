@@ -63,7 +63,6 @@ pipeline {
             steps {
                 echo 'Running OWASP ZAP DAST scan...'
 
-                // تشغيل ZAP
                 startZap(
                     zapHome: 'C:/ZAP',
                     port: 8090,
@@ -78,24 +77,30 @@ pipeline {
 
                 // Spider
                 runZapCrawler(
-                    host: 'http://localhost:8080',
-                    maxChildren: 10,
-                    recurse: true
+                    contextName: 'Default Context',
+                    contextId: 0,
+                    subtreeOnly: false,
+                    recurse: true,
+                    userId: 0
                 )
 
                 // Active Scan
                 runZapAttack(
-                    host: 'http://localhost:8080',
-                    recurse: true
+                    contextName: 'Default Context',
+                    contextId: 0,
+                    recurse: true,
+                    userId: 0
                 )
 
                 // حفظ التقرير
                 archiveZap(
-                    failAllAlerts: 0,
+                    failHighAlerts: 0,
+                    failMediumAlerts: 0,
+                    failLowAlerts: 0,
+                    falsePositivesFilePath: '',
                     keepAlive: false
                 )
 
-                // وقف ZAP
                 stopZap()
             }
         }
