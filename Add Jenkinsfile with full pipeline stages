@@ -2,13 +2,13 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven_3.8.8'  
-        jdk 'Java_17'        
+        maven 'Maven_3.8.8'
+        jdk 'Java_17'
     }
 
     environment {
         MAIL_RECIPIENT = "azoz.sh2003@gmail.com"
-        SONARQUBE_ENV = 'MySonarQube' 
+        SONARQUBE_ENV = 'MySonarQube'
     }
 
     stages {
@@ -55,7 +55,7 @@ pipeline {
             steps {
                 echo 'Starting PhoneShope app in background...'
                 bat "start /B mvn spring-boot:run"
-                sleep(time: 20, unit: 'SECONDS')  // إعطاء وقت للتطبيق ليشتغل
+                sleep(time: 20, unit: 'SECONDS') // إعطاء وقت للتطبيق ليشتغل
             }
         }
 
@@ -88,11 +88,17 @@ pipeline {
                 )
 
                 // Active Scan
-                runZapAttack(host: 'http://localhost:8080')
+                runZapAttack(
+                    host: 'http://localhost:8080',      // المعطى المقبول في بعض نسخ plugin الحديثة
+                    policyName: 'Default Policy'        // استخدام Policy افتراضي
+                )
 
                 // حفظ التقرير
                 archiveZap(
-                    failAllAlerts: 0,   // 0 = لا تفشل على أي تنبيهات
+                    failHighAlerts: 0,
+                    failMediumAlerts: 0,
+                    failLowAlerts: 0,
+                    falsePositivesFilePath: '',
                     keepAlive: false
                 )
 
