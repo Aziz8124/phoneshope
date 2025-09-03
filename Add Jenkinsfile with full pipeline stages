@@ -89,13 +89,18 @@ pipeline {
 
                 // Active Scan
                 runZapAttack(
-                    target: 'http://localhost:8080',
-                    scanPolicyName: 'Default Policy'
+                    contextName: 'Default Context',
+                    contextId: 0,
+                    recurse: true,
+                    userId: 0
                 )
 
                 // حفظ التقرير
                 archiveZap(
-                    failAllAlerts: 0,
+                    failHighAlerts: 0,
+                    failMediumAlerts: 0,
+                    failLowAlerts: 0,
+                    falsePositivesFilePath: '',
                     keepAlive: false
                 )
 
