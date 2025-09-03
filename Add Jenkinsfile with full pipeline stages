@@ -60,26 +60,35 @@ pipeline {
         }
 
         stage('DAST - OWASP ZAP Scan') {
-    steps {
-        echo 'Running OWASP ZAP DAST scan...'
+            steps {
+                echo 'Running OWASP ZAP DAST scan...'
 
-        // شغّل ZAP
-        startZap zapHome: 'C:/ZAP', port: 8090, host: '127.0.0.1'
+                // تشغيل ZAP مع المعطيات المطلوبة
+                startZap(
+                    zapHome: 'C:/ZAP',
+                    port: 8090,
+                    host: '127.0.0.1',
+                    timeout: 120,
+                    allowedHosts: '.*',
+                    sessionPath: '',
+                    externalZap: false,
+                    rootCaFile: '',
+                    additionalConfigurations: ''
+                )
 
-        // Spider (يزحف الموقع)
-        runZapCrawler target: 'http://localhost:8080'
+                // Spider (يزحف الموقع)
+                runZapCrawler(host: 'http://localhost:8080')
 
-        // Active Scan
-        runZapAttack target: 'http://localhost:8080'
+                // Active Scan
+                runZapAttack(host: 'http://localhost:8080')
 
-        // حفظ التقرير
-        archiveZap reportFile: 'zap-report.html', target: 'http://localhost:8080'
+                // حفظ التقرير
+                archiveZap(keepAlive: false)
 
-        // وقف ZAP
-        stopZap()
-    }
-}
-
+                // وقف ZAP
+                stopZap()
+            }
+        }
 
         stage('Stop Application') {
             steps {
