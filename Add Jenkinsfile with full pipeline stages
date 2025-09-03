@@ -64,8 +64,7 @@ pipeline {
                 echo 'Running OWASP ZAP DAST scan...'
 
                 startZap(
-                    zapHome: '"C:\\Program Files\\ZAP\\Zed Attack Proxy\\ZAP.exe" -daemon -host 127.0.0.1 -port 8090 -dir "C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\PhoneShope-Automation\\zaptemp" -config api.disablekey=true -config api.addrs.addr.regex=true -config api.addrs.addr.name=.* -config connection.timeoutInSecs=600
-',
+                    zapHome: 'C:\\Program Files\\ZAP\\Zed Attack Proxy\\ZAP.exe', // المسار الصحيح
                     port: 8090,
                     host: '127.0.0.1',
                     timeout: 120,
@@ -73,11 +72,18 @@ pipeline {
                     sessionPath: '',
                     externalZap: false,
                     rootCaFile: '',
-                    additionalConfigurations: []
+                    additionalConfigurations: [
+                        '-daemon',
+                        '-config api.disablekey=true',
+                        '-config api.addrs.addr.regex=true',
+                        '-config api.addrs.addr.name=.*',
+                        '-config connection.timeoutInSecs=600',
+                        "-dir C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\PhoneShope-Automation\\zaptemp"
+                    ]
                 )
 
                 runZapCrawler(
-                    host: 'http://localhost:8081',  // بورت التطبيق الجديد
+                    host: 'http://localhost:8081',  // بورت التطبيق
                     maxChildren: 10,
                     contextId: 0,
                     contextName: 'Default Context',
