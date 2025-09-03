@@ -75,8 +75,9 @@ pipeline {
                     additionalConfigurations: []
                 )
 
-                // Spider
                 runZapCrawler(
+                    host: 'http://localhost:8080',
+                    maxChildren: 10,
                     contextName: 'Default Context',
                     contextId: 0,
                     subtreeOnly: false,
@@ -84,16 +85,14 @@ pipeline {
                     userId: 0
                 )
 
-                // Active Scan
                 runZapAttack(
-                    contextName: 'Default Context',
                     contextId: 0,
                     recurse: true,
                     userId: 0
                 )
 
-                // حفظ التقرير
                 archiveZap(
+                    failAllAlerts: 0,
                     failHighAlerts: 0,
                     failMediumAlerts: 0,
                     failLowAlerts: 0,
