@@ -43,7 +43,7 @@ pipeline {
             }
         }
 
-        stage("Quality Gate") {
+        stage('Quality Gate') {
             steps {
                 timeout(time: 1, unit: 'HOURS') {
                     waitForQualityGate abortPipeline: true
@@ -89,16 +89,13 @@ pipeline {
 
                 // Active Scan
                 runZapAttack(
-                    host: 'http://localhost:8080',      // المعطى المقبول في بعض نسخ plugin الحديثة
-                    policyName: 'Default Policy'        // استخدام Policy افتراضي
+                    target: 'http://localhost:8080',
+                    scanPolicyName: 'Default Policy'
                 )
 
                 // حفظ التقرير
                 archiveZap(
-                    failHighAlerts: 0,
-                    failMediumAlerts: 0,
-                    failLowAlerts: 0,
-                    falsePositivesFilePath: '',
+                    failAllAlerts: 0,
                     keepAlive: false
                 )
 
