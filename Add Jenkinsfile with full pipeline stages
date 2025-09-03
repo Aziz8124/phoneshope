@@ -23,7 +23,7 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the project...'
-                bat 'mvn clean package'
+                bat 'mvn clean package -DskipTests'
             }
         }
 
@@ -51,17 +51,32 @@ pipeline {
             }
         }
 
+        stage('Run Application') {
+            steps {
+                echo 'Starting PhoneShope app in background...'
+                bat "start /B mvn spring-boot:run"
+                sleep(time: 20, unit: 'SECONDS')  // اعط وقت للتطبيق يشتغل
+            }
+        }
+
         stage('DAST - OWASP ZAP Scan') {
             steps {
                 echo 'Running OWASP ZAP DAST scan...'
-                // مثال: افترض التطبيق شغال على http://localhost:8080
-                zapAttackScan zapHome: '/path/to/zap',  // مسار ZAP على السيرفر
+                zapAttackScan zapHome: 'C:\\Program Files\\ZAP', // عدّل المسار لمكان ZAP
                               target: 'http://localhost:8080',
                               sessionPath: '',
                               sessionProperties: '',
                               reportTitle: 'PhoneShope ZAP Report',
                               reportDir: 'zap-reports',
                               reportFile: 'zap_report.html'
+            }
+        }
+
+        stage('Stop Application') {
+            steps {
+                echo 'Stopping PhoneShope app...'
+                // kill java process اللي مشغّل التطبيق
+                bat 'taskkill /F /IM java.exe || exit 0'
             }
         }
     }
