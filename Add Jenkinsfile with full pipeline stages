@@ -9,6 +9,7 @@ pipeline {
     environment {
         MAIL_RECIPIENT = "azoz.sh2003@gmail.com"
         SONARQUBE_ENV = 'MySonarQube'
+        ZAP_PATH = 'C:\\Program Files\\ZAP\\Zed Attack Proxy\\zap.bat' // مسار ZAP الصحيح
     }
 
     stages {
@@ -64,7 +65,7 @@ pipeline {
                 echo 'Running OWASP ZAP DAST scan...'
 
                 startZap(
-                    zapHome: 'C:\\Program Files\\ZAP\\Zed Attack Proxy\\zap.bat', // تم تعديل المسار فقط
+                    zapHome: "${ZAP_PATH}",
                     port: 8090,
                     host: '127.0.0.1',
                     timeout: 120,
@@ -83,7 +84,7 @@ pipeline {
                 )
 
                 runZapCrawler(
-                    host: 'http://localhost:8081',  // بورت التطبيق
+                    host: 'http://localhost:8081',
                     maxChildren: 10,
                     contextId: 0,
                     contextName: 'Default Context',
