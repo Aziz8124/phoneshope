@@ -2,13 +2,13 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven_3.8.8'  // تأكد الاسم مطابق لما موجود في Jenkins
-        jdk 'Java_17'        // تأكد الاسم مطابق لما موجود في Jenkins
+        maven 'Maven_3.8.8'  
+        jdk 'Java_17'        
     }
 
     environment {
         MAIL_RECIPIENT = "azoz.sh2003@gmail.com"
-        SONARQUBE_ENV = 'MySonarQube' // <-- الاسم الصحيح
+        SONARQUBE_ENV = 'MySonarQube' 
     }
 
     stages {
@@ -48,6 +48,20 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS') {
                     waitForQualityGate abortPipeline: true
                 }
+            }
+        }
+
+        stage('DAST - OWASP ZAP Scan') {
+            steps {
+                echo 'Running OWASP ZAP DAST scan...'
+                // مثال: افترض التطبيق شغال على http://localhost:8080
+                zapAttackScan zapHome: '/path/to/zap',  // مسار ZAP على السيرفر
+                              target: 'http://localhost:8080',
+                              sessionPath: '',
+                              sessionProperties: '',
+                              reportTitle: 'PhoneShope ZAP Report',
+                              reportDir: 'zap-reports',
+                              reportFile: 'zap_report.html'
             }
         }
     }
