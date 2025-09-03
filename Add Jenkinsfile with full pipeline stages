@@ -54,7 +54,7 @@ pipeline {
         stage('Run Application') {
             steps {
                 echo 'Starting PhoneShope app in background...'
-                bat "start /B mvn spring-boot:run"
+                bat "start /B mvn spring-boot:run -Dserver.port=8081"
                 sleep(time: 20, unit: 'SECONDS')  // وقت للتطبيق ليشتغل
             }
         }
@@ -63,23 +63,48 @@ pipeline {
             steps {
                 echo 'Running OWASP ZAP DAST scan...'
 
-                // تشغيل ZAP.exe في الخلفية على البورت 8081
-                bat 'start /B "" "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\ZAP\\zap.exe" -daemon -port 8081 -host 127.0.0.1'
+                startZap(
+                    zapHome: 'C:/ProgramData/Microsoft/Windows/Start Menu/Programs/ZAP',
+                    port: 8090,
+                    host: '127.0.0.1',
+                    timeout: 120,
+                    allowedHosts: ['.*'],
+                    sessionPath: '',
+                    externalZap: false,
+                    rootCaFile: '',
+                    additionalConfigurations: []
+                )
 
-                // وقت للـ ZAP ليشتغل بالكامل قبل الـ scan
-                sleep(time: 20, unit: 'SECONDS')
+                runZapCrawler(
+                    host: 'http://localhost:8081',  // بورت التطبيق الجديد
+                    maxChildren: 10,
+                    contextId: 0,
+                    contextName: 'Default Context',
+                    recurse: true,
+                    subtreeOnly: false,
+                    userId: 0
+                )
 
-                // تشغيل الـ spider / crawler
-                bat 'curl "http://127.0.0.1:8081/JSON/spider/action/scan/?url=http://localhost:8080/&maxChildren=10&recurse=true"'
+                runZapAttack(
+                    contextId: 0,
+                    scanPolicyName: 'Default Policy',
+                    inScopeOnly: true,
+                    method: 'GET',
+                    postData: '',
+                    recurse: true,
+                    userId: 0
+                )
 
-                // تشغيل الـ active scan
-                bat 'curl "http://127.0.0.1:8081/JSON/ascan/action/scan/?url=http://localhost:8080/&recurse=true"'
+                archiveZap(
+                    failAllAlerts: 0,
+                    failHighAlerts: 0,
+                    failMediumAlerts: 0,
+                    failLowAlerts: 0,
+                    falsePositivesFilePath: '',
+                    keepAlive: false
+                )
 
-                // تنزيل التقرير (HTML)
-                bat 'curl "http://127.0.0.1:8081/OTHER/core/other/htmlreport/" -o zap-report.html'
-
-                // إيقاف ZAP
-                bat 'curl "http://127.0.0.1:8081/JSON/core/action/shutdown/"'
+                stopZap()
             }
         }
 
