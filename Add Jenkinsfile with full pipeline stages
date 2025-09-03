@@ -63,27 +63,38 @@ pipeline {
             steps {
                 echo 'Running OWASP ZAP DAST scan...'
 
-                // تشغيل ZAP مع المعطيات المطلوبة
+                // تشغيل ZAP
                 startZap(
                     zapHome: 'C:/ZAP',
                     port: 8090,
                     host: '127.0.0.1',
                     timeout: 120,
-                    allowedHosts: '.*',
+                    allowedHosts: ['.*'],
                     sessionPath: '',
                     externalZap: false,
                     rootCaFile: '',
-                    additionalConfigurations: ''
+                    additionalConfigurations: []
                 )
 
                 // Spider (يزحف الموقع)
-                runZapCrawler(host: 'http://localhost:8080')
+                runZapCrawler(
+                    url: 'http://localhost:8080',
+                    maxChildren: 10,
+                    contextName: 'Default Context',
+                    contextId: 0,
+                    subtreeOnly: false,
+                    recurse: true,
+                    userId: 0
+                )
 
                 // Active Scan
-                runZapAttack(host: 'http://localhost:8080')
+                runZapAttack(url: 'http://localhost:8080')
 
                 // حفظ التقرير
-                archiveZap(keepAlive: false)
+                archiveZap(
+                    failAllAlerts: false,
+                    keepAlive: false
+                )
 
                 // وقف ZAP
                 stopZap()
@@ -93,7 +104,6 @@ pipeline {
         stage('Stop Application') {
             steps {
                 echo 'Stopping PhoneShope app...'
-                // kill java process اللي مشغّل التطبيق
                 bat 'taskkill /F /IM java.exe || exit 0'
             }
         }
