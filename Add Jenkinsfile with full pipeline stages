@@ -55,7 +55,7 @@ pipeline {
             steps {
                 echo 'Starting PhoneShope app in background...'
                 bat "start /B mvn spring-boot:run"
-                sleep(time: 20, unit: 'SECONDS') // إعطاء وقت للتطبيق ليشتغل
+                sleep(time: 20, unit: 'SECONDS')
             }
         }
 
@@ -76,31 +76,22 @@ pipeline {
                     additionalConfigurations: []
                 )
 
-                // Spider (يزحف الموقع)
+                // Spider
                 runZapCrawler(
                     host: 'http://localhost:8080',
                     maxChildren: 10,
-                    contextName: 'Default Context',
-                    contextId: 0,
-                    subtreeOnly: false,
-                    recurse: true,
-                    userId: 0
+                    recurse: true
                 )
 
                 // Active Scan
                 runZapAttack(
-                    contextName: 'Default Context',
-                    contextId: 0,
-                    recurse: true,
-                    userId: 0
+                    host: 'http://localhost:8080',
+                    recurse: true
                 )
 
                 // حفظ التقرير
                 archiveZap(
-                    failHighAlerts: 0,
-                    failMediumAlerts: 0,
-                    failLowAlerts: 0,
-                    falsePositivesFilePath: '',
+                    failAllAlerts: 0,
                     keepAlive: false
                 )
 
