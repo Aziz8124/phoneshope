@@ -9,7 +9,7 @@ pipeline {
     environment {
         MAIL_RECIPIENT = "azoz.sh2003@gmail.com"
         SONARQUBE_ENV = 'MySonarQube'
-        ZAP_PATH = 'C:\\Program Files\\ZAP\\Zed Attack Proxy' // مسار ZAP الصحيح
+        ZAP_PATH = '"C:\\Program Files\\ZAP\\Zed Attack Proxy"' // مسار ZAP الصحيح
     }
 
     stages {
