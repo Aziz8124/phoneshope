@@ -2,13 +2,12 @@ pipeline {
     agent any
 
     environment {
-        MAVEN_HOME = 'Maven 3.8.8' // اسم الـ Maven tool في Jenkins
-        JAVA_HOME = 'JDK_17'       // اسم الـ JDK tool في Jenkins
+        // أي متغيرات عامة ممكن تحتاجها
         ZAP_PORT = '8099'
+        MAVEN_TOOL = 'Maven 3.8.8' // تأكد أن الاسم مطابق لتعريفك في Jenkins
     }
 
     stages {
-
         stage('Checkout SCM') {
             steps {
                 checkout scm
@@ -17,60 +16,60 @@ pipeline {
 
         stage('Build') {
             steps {
-                echo 'Building the project...'
-                bat '"%MAVEN_HOME%\\bin\\mvn" clean package'
+                script {
+                    def mvnHome = tool name: "${MAVEN_TOOL}", type: 'maven'
+                    echo "Building the project using Maven..."
+                    bat "${mvnHome}\\bin\\mvn clean package"
+                }
             }
         }
 
         stage('Start ZAP') {
             steps {
-                echo 'Starting ZAP DAST scanner...'
-                bat """
-                docker run -d -u zap -p %ZAP_PORT%:%ZAP_PORT% ghcr.io/zaproxy/zaproxy:stable zap.sh -daemon -port %ZAP_PORT% -host 0.0.0.0 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
-                """
-                echo 'Waiting 15 seconds for ZAP to initialize...'
-                // الانتظار بطريقة متوافقة مع Windows
-                bat 'timeout /t 15 /nobreak >nul'
+                echo "Starting ZAP DAST scanner..."
+                // تأكد أن Docker يعمل على النظام
+                bat "docker run -d -u zap -p ${ZAP_PORT}:${ZAP_PORT} ghcr.io/zaproxy/zaproxy:stable zap.sh -daemon -port ${ZAP_PORT} -host 0.0.0.0 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true"
+                
+                echo "Waiting 15 seconds for ZAP to initialize..."
+                bat "powershell -Command \"Start-Sleep -Seconds 15\""
             }
         }
 
         stage('DAST Security Scan') {
             steps {
-                echo 'Running DAST Security Scan...'
-                // هنا يمكنك إضافة أوامر تشغيل scan على التطبيق المستهدف
-                // مثال: bat "docker exec <zap_container_id> zap-cli quick-scan --self-contained -r http://localhost:8080"
+                echo "Running DAST scan with ZAP..."
+                // هنا ممكن تضيف أوامر الـ ZAP scan حسب حاجتك
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Running tests...'
-                bat '"%MAVEN_HOME%\\bin\\mvn" test'
+                echo "Running tests..."
+                // إذا عندك أي أوامر لتشغيل الاختبارات
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                echo 'Running SonarQube analysis...'
-                // bat 'mvn sonar:sonar ...'  أضف إعدادات SonarQube حسب الحاجة
+                echo "Running SonarQube analysis..."
+                // أضف هنا أوامر SonarQube scanner إذا عندك
             }
         }
 
         stage('Quality Gate') {
             steps {
-                echo 'Checking Quality Gate...'
-                // bat 'mvn sonar:qualitygate' أو أي أمر آخر
+                echo "Checking Quality Gate..."
+                // أضف هنا خطوات التحقق من Quality Gate
             }
         }
     }
 
     post {
         success {
-            echo 'Build completed successfully!'
+            echo 'Build and DAST scan completed successfully!'
         }
         failure {
             echo 'Build failed!'
-            // يمكن إضافة mail step لإرسال تنبيه
         }
     }
 }
