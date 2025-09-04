@@ -9,9 +9,7 @@ pipeline {
     environment {
         MAIL_RECIPIENT = "azoz.sh2003@gmail.com"
         SONARQUBE_ENV = 'MySonarQube'
-        ZAP_DOCKER_IMAGE = 'ghcr.io/zaproxy/zaproxy:stable'
         ZAP_PORT = '8090'
-        ZAP_HOST = '0.0.0.0'
     }
 
     stages {
@@ -30,31 +28,24 @@ pipeline {
             }
         }
 
-        // مرحلة DAST باستخدام ZAP
+        stage('Start ZAP') {
+            steps {
+                echo 'Starting ZAP DAST scanner...'
+                bat """
+                docker run -d -u zap -p %ZAP_PORT%:8090 ghcr.io/zaproxy/zaproxy:stable zap.sh -daemon -port 8090 -host 0.0.0.0 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
+                """
+                echo 'Waiting 15 seconds for ZAP to initialize...'
+                bat 'timeout /t 15'
+            }
+        }
+
         stage('DAST Security Scan') {
             steps {
-                echo 'Starting ZAP DAST scan...'
-                script {
-                    // تشغيل ZAP كـ Docker Container في الخلفية
-                    bat """
-                    docker run -d -u zap -p ${ZAP_PORT}:${ZAP_PORT} \\
-                    ${ZAP_DOCKER_IMAGE} zap.sh -daemon -port ${ZAP_PORT} -host ${ZAP_HOST} -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
-                    """
-
-                    // نضيف تأخير 15 ثانية لتأكد من أن ZAP جاهز
-                    sleep(time: 15, unit: 'SECONDS')
-
-                    // إطلاق scan على تطبيقك المحلي (مثال: localhost:8080)
-                    bat """
-                    docker exec -i \$(docker ps -q -f ancestor=${ZAP_DOCKER_IMAGE}) \\
-                    zap-cli --zap-url http://localhost:${ZAP_PORT} --start-options '-config api.disablekey=true' open-url http://localhost:8080
-                    docker exec -i \$(docker ps -q -f ancestor=${ZAP_DOCKER_IMAGE}) \\
-                    zap-cli --zap-url http://localhost:${ZAP_PORT} active-scan -r http://localhost:8080
-                    docker exec -i \$(docker ps -q -f ancestor=${ZAP_DOCKER_IMAGE}) \\
-                    zap-cli --zap-url http://localhost:${ZAP_PORT} report -o zap-report.html -f html
-                    """
-                    echo "ZAP DAST scan completed. Report saved as zap-report.html"
-                }
+                echo 'Running ZAP DAST scan...'
+                // مثال: scan الموقع المحلي للتطبيق
+                bat """
+                docker exec -i \$(docker ps -q --filter "ancestor=ghcr.io/zaproxy/zaproxy:stable") zap-cli -p 8090 quick-scan --self-contained --start-options "-config api.disablekey=true" http://localhost:8080
+                """
             }
         }
 
