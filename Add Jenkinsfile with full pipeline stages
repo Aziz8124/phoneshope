@@ -31,7 +31,7 @@ pipeline {
                 bat "docker run -d -u zap -p ${ZAP_PORT}:${ZAP_PORT} ghcr.io/zaproxy/zaproxy:stable zap.sh -daemon -port ${ZAP_PORT} -host 0.0.0.0 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true"
                 
                 echo "Waiting 15 seconds for ZAP to initialize..."
-                bat "timeout /t 15 /nobreak"
+                bat 'C:\\Windows\\System32\\timeout.exe /t 15 /nobreak'
             }
         }
 
