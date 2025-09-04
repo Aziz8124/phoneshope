@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        MAVEN_HOME = 'Maven_3.8.8' // اسم الـ Maven tool في Jenkins
+        MAVEN_HOME = 'Maven 3.8.8' // اسم الـ Maven tool في Jenkins
         JAVA_HOME = 'JDK_17'       // اسم الـ JDK tool في Jenkins
         ZAP_PORT = '8099'
     }
