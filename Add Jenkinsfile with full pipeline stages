@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     tools {
-        // اسم الـ Maven اللي ضبطناه في Jenkins Global Tool Configuration
-        maven 'Maven 3.8.8'
-        // اختر JDK إذا كان مطلوب
+        // اسم الـ Maven كما هو معرف في Jenkins
+        maven 'Maven_3.8.8'
+        // اسم JDK كما هو معرف في Jenkins
         jdk 'Java_17'
     }
 
@@ -19,15 +19,15 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the project using Maven...'
-                // استخدام مسار Maven اللي Jenkins يعرفه
-                bat "${tool('Maven_3.8.8')}\\bin\\mvn clean package"
+                // استخدام مسار Maven كما هو معرف في Jenkins
+                bat "\"${tool('Maven_3.8.8')}\\bin\\mvn\" clean package"
             }
         }
 
         stage('Start ZAP') {
             steps {
                 echo 'Starting ZAP DAST scanner...'
-                // مثال لتشغيل Docker ZAP على منفذ مختلف لتجنب التعارض
+                // تشغيل Docker ZAP على منفذ 8090 لتجنب التعارض
                 bat 'docker run -d -u zap -p 8090:8090 ghcr.io/zaproxy/zaproxy:stable zap.sh -daemon -port 8090 -host 0.0.0.0 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true'
             }
         }
@@ -35,29 +35,28 @@ pipeline {
         stage('DAST Security Scan') {
             steps {
                 echo 'Running DAST Security Scan...'
-                // هنا ممكن تضيف أمر curl أو ZAP CLI لتشغيل الفحص
+                // هنا ممكن تضيف أمر ZAP CLI أو curl لتشغيل الفحص
             }
         }
 
         stage('Test') {
             steps {
                 echo 'Running tests...'
-                bat "${tool('Maven_3.8.8')}\\bin\\mvn test"
+                bat "\"${tool('Maven_3.8.8')}\\bin\\mvn\" test"
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 echo 'Running SonarQube analysis...'
-                // مثال على تشغيل SonarScanner
-                bat "${tool('Maven_3.8.8')}\\bin\\mvn sonar:sonar"
+                bat "\"${tool('Maven_3.8.8')}\\bin\\mvn\" sonar:sonar"
             }
         }
 
         stage('Quality Gate') {
             steps {
                 echo 'Checking Quality Gate...'
-                // هنا ممكن تضيف خطوات للتحقق من حالة Quality Gate
+                // يمكن إضافة خطوات التحقق من حالة Quality Gate هنا
             }
         }
     }
