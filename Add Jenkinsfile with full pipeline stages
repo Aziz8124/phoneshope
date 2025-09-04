@@ -9,7 +9,6 @@ pipeline {
     environment {
         MAIL_RECIPIENT = "azoz.sh2003@gmail.com"
         SONARQUBE_ENV = 'MySonarQube'
-        // استخدم المجلد مش zap.bat نفسه
         ZAP_PATH = 'C:\\Program Files\\ZAP\\Zed Attack Proxy'
     }
 
@@ -65,25 +64,26 @@ pipeline {
             steps {
                 echo 'Running OWASP ZAP DAST scan...'
 
+                // تشغيل ZAP في وضع daemon
                 startZap(
-                    zapHome: "${ZAP_PATH}",   // المسار صار للمجلد مش للbat
+                    zapHome: "${ZAP_PATH}",
                     port: 8090,
                     host: '127.0.0.1',
                     timeout: 120,
                     allowedHosts: ['.*'],
-                    sessionPath: '',
                     externalZap: false,
-                    rootCaFile: '',
                     additionalConfigurations: [
                         '-daemon',
                         '-config api.disablekey=true',
                         '-config api.addrs.addr.regex=true',
                         '-config api.addrs.addr.name=.*',
-                        '-config connection.timeoutInSecs=600',
-                        "-dir C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\PhoneShope-Automation\\zaptemp"
+                        '-config connection.timeoutInSecs=600'
                     ]
                 )
 
+                sleep(time: 10, unit: 'SECONDS')
+
+                // تشغيل الزاحف على التطبيق
                 runZapCrawler(
                     host: 'http://localhost:8081',
                     maxChildren: 10,
@@ -94,6 +94,7 @@ pipeline {
                     userId: 0
                 )
 
+                // تنفيذ الهجوم (Active Scan)
                 runZapAttack(
                     contextId: 0,
                     scanPolicyName: 'Default Policy',
@@ -104,15 +105,16 @@ pipeline {
                     userId: 0
                 )
 
+                // أرشفة النتائج
                 archiveZap(
                     failAllAlerts: 0,
                     failHighAlerts: 0,
                     failMediumAlerts: 0,
                     failLowAlerts: 0,
-                    falsePositivesFilePath: '',
                     keepAlive: false
                 )
 
+                // إيقاف ZAP بعد الانتهاء
                 stopZap()
             }
         }
