@@ -10,7 +10,7 @@ pipeline {
         MAIL_RECIPIENT = "azoz.sh2003@gmail.com"
         SONARQUBE_ENV = 'MySonarQube' // <-- الاسم الصحيح
         DOCKER_IMAGE = 'ghcr.io/zaproxy/zaproxy:stable'
-        ZAP_PORT = '8090'
+        ZAP_PORT = '8099'
     }
 
     stages {
