@@ -9,7 +9,9 @@ pipeline {
     environment {
         MAIL_RECIPIENT = "azoz.sh2003@gmail.com"
         SONARQUBE_ENV = 'MySonarQube'
-        ZAP_PATH = "C:\\Program Files\\ZAP\\Zed Attack Proxy"
+        ZAP_DOCKER_IMAGE = 'ghcr.io/zaproxy/zaproxy:stable'
+        ZAP_PORT = '8090'
+        ZAP_HOST = '0.0.0.0'
     }
 
     stages {
@@ -24,7 +26,35 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the project...'
-                bat 'mvn clean package -DskipTests'
+                bat 'mvn clean package'
+            }
+        }
+
+        // مرحلة DAST باستخدام ZAP
+        stage('DAST Security Scan') {
+            steps {
+                echo 'Starting ZAP DAST scan...'
+                script {
+                    // تشغيل ZAP كـ Docker Container في الخلفية
+                    bat """
+                    docker run -d -u zap -p ${ZAP_PORT}:${ZAP_PORT} \\
+                    ${ZAP_DOCKER_IMAGE} zap.sh -daemon -port ${ZAP_PORT} -host ${ZAP_HOST} -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
+                    """
+
+                    // نضيف تأخير 15 ثانية لتأكد من أن ZAP جاهز
+                    sleep(time: 15, unit: 'SECONDS')
+
+                    // إطلاق scan على تطبيقك المحلي (مثال: localhost:8080)
+                    bat """
+                    docker exec -i \$(docker ps -q -f ancestor=${ZAP_DOCKER_IMAGE}) \\
+                    zap-cli --zap-url http://localhost:${ZAP_PORT} --start-options '-config api.disablekey=true' open-url http://localhost:8080
+                    docker exec -i \$(docker ps -q -f ancestor=${ZAP_DOCKER_IMAGE}) \\
+                    zap-cli --zap-url http://localhost:${ZAP_PORT} active-scan -r http://localhost:8080
+                    docker exec -i \$(docker ps -q -f ancestor=${ZAP_DOCKER_IMAGE}) \\
+                    zap-cli --zap-url http://localhost:${ZAP_PORT} report -o zap-report.html -f html
+                    """
+                    echo "ZAP DAST scan completed. Report saved as zap-report.html"
+                }
             }
         }
 
@@ -49,78 +79,6 @@ pipeline {
                 timeout(time: 1, unit: 'HOURS') {
                     waitForQualityGate abortPipeline: true
                 }
-            }
-        }
-
-        stage('Run Application') {
-            steps {
-                echo 'Starting PhoneShope app in background...'
-                bat "start /B mvn spring-boot:run -Dserver.port=8081"
-                sleep(time: 20, unit: 'SECONDS')
-            }
-        }
-
-        stage('DAST - OWASP ZAP Scan') {
-            steps {
-                echo 'Running OWASP ZAP DAST scan...'
-
-                startZap(
-                    zapHome: "${ZAP_PATH}",
-                    port: 8090,
-                    host: '127.0.0.1',
-                    timeout: 120,
-                    allowedHosts: ['.*'],
-                    sessionPath: '',       // مطلوب
-                    rootCaFile: '',        // مطلوب
-                    externalZap: false,
-                    additionalConfigurations: [
-                        '-daemon',
-                        '-config api.disablekey=true',
-                        '-config api.addrs.addr.regex=true',
-                        '-config api.addrs.addr.name=.*',
-                        '-config connection.timeoutInSecs=600'
-                    ]
-                )
-
-                sleep(time: 10, unit: 'SECONDS')
-
-                runZapCrawler(
-                    host: 'http://localhost:8081',
-                    maxChildren: 10,
-                    contextId: 0,
-                    contextName: 'Default Context',
-                    recurse: true,
-                    subtreeOnly: false,
-                    userId: 0
-                )
-
-                runZapAttack(
-                    contextId: 0,
-                    scanPolicyName: 'Default Policy',
-                    inScopeOnly: true,
-                    method: 'GET',
-                    postData: '',
-                    recurse: true,
-                    userId: 0
-                )
-
-                archiveZap(
-                    failAllAlerts: 0,
-                    failHighAlerts: 0,
-                    failMediumAlerts: 0,
-                    failLowAlerts: 0,
-                    falsePositivesFilePath: '',   // مطلوب
-                    keepAlive: false
-                )
-
-                stopZap()
-            }
-        }
-
-        stage('Stop Application') {
-            steps {
-                echo 'Stopping PhoneShope app...'
-                bat 'taskkill /F /IM java.exe || exit 0'
             }
         }
     }
