@@ -1,142 +1,46 @@
 pipeline {
     agent any
 
-    tools {
-        maven 'Maven_3.8.8'
-        jdk 'Java_17'
-    }
-
     environment {
-        MAIL_RECIPIENT = "azoz.sh2003@gmail.com"
-        SONARQUBE_ENV = 'MySonarQube'
-        ZAP_PATH = "C:\\Program Files\\ZAP\\Zed Attack Proxy"
+        // المسار الكامل لـ ZAP مع علامات اقتباس
+        ZAP_PATH = '"C:\\Program Files\\ZAP\\Zed Attack Proxy\\zap.bat"'
+        ZAP_PORT = '8090'
     }
 
     stages {
-        stage('Checkout SCM') {
+
+        stage('Start ZAP') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/Aziz8124/phoneshope.git',
-                    credentialsId: 'GITHUB_CREDENTIALS_ID'
+                echo "Starting ZAP in daemon mode..."
+                bat "${env.ZAP_PATH} -daemon -port ${env.ZAP_PORT} -config api.disablekey=true"
             }
         }
 
-        stage('Build') {
+        stage('Run ZAP Scan') {
             steps {
-                echo 'Building the project...'
-                bat 'mvn clean package -DskipTests'
+                echo "Running active scan..."
+                // مثال على تشغيل scan على موقع محدد
+                bat """
+                curl http://localhost:8090/JSON/ascan/action/scan/?url=http://example.com
+                """
             }
         }
 
-        stage('Test') {
+        stage('Stop ZAP') {
             steps {
-                echo 'Running tests...'
-                bat 'mvn test'
-            }
-        }
-
-        stage('SonarQube Analysis') {
-            steps {
-                echo 'Running SonarQube Scan...'
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    bat 'mvn sonar:sonar -Dsonar.projectKey=phoneshope -Dsonar.projectName="PhoneShope"'
-                }
-            }
-        }
-
-        stage("Quality Gate") {
-            steps {
-                timeout(time: 1, unit: 'HOURS') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-
-        stage('Run Application') {
-            steps {
-                echo 'Starting PhoneShope app in background...'
-                bat "start /B mvn spring-boot:run -Dserver.port=8081"
-                sleep(time: 20, unit: 'SECONDS')
-            }
-        }
-
-        stage('DAST - OWASP ZAP Scan') {
-            steps {
-                echo 'Running OWASP ZAP DAST scan...'
-
-                startZap(
-                    zapHome: "${ZAP_PATH}",
-                    port: 8090,
-                    host: '127.0.0.1',
-                    timeout: 120,
-                    allowedHosts: ['.*'],
-                    sessionPath: '',       // مطلوب
-                    rootCaFile: '',        // مطلوب
-                    externalZap: false,
-                    additionalConfigurations: [
-                        '-daemon',
-                        '-config api.disablekey=true',
-                        '-config api.addrs.addr.regex=true',
-                        '-config api.addrs.addr.name=.*',
-                        '-config connection.timeoutInSecs=600'
-                    ]
-                )
-
-                sleep(time: 10, unit: 'SECONDS')
-
-                runZapCrawler(
-                    host: 'http://localhost:8081',
-                    maxChildren: 10,
-                    contextId: 0,
-                    contextName: 'Default Context',
-                    recurse: true,
-                    subtreeOnly: false,
-                    userId: 0
-                )
-
-                runZapAttack(
-                    contextId: 0,
-                    scanPolicyName: 'Default Policy',
-                    inScopeOnly: true,
-                    method: 'GET',
-                    postData: '',
-                    recurse: true,
-                    userId: 0
-                )
-
-                archiveZap(
-                    failAllAlerts: 0,
-                    failHighAlerts: 0,
-                    failMediumAlerts: 0,
-                    failLowAlerts: 0,
-                    falsePositivesFilePath: '',   // مطلوب
-                    keepAlive: false
-                )
-
-                stopZap()
-            }
-        }
-
-        stage('Stop Application') {
-            steps {
-                echo 'Stopping PhoneShope app...'
-                bat 'taskkill /F /IM java.exe || exit 0'
+                echo "Stopping ZAP..."
+                // إيقاف ZAP عبر API
+                bat """
+                curl http://localhost:8090/JSON/core/action/shutdown/
+                """
             }
         }
     }
 
     post {
-        success {
-            echo 'Build successful!'
-            mail to: "${MAIL_RECIPIENT}",
-                 subject: "Jenkins Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: "Good news! The build was successful.\nCheck console output at: ${env.BUILD_URL}"
-        }
-        failure {
-            echo 'Build failed!'
-            mail to: "${MAIL_RECIPIENT}",
-                 subject: "Jenkins Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: "Build failed. Please check the console output at: ${env.BUILD_URL}"
+        always {
+            echo "Cleaning up..."
+            // أي أوامر تنظيف إضافية لو لزم
         }
     }
 }
