@@ -2,74 +2,85 @@ pipeline {
     agent any
 
     environment {
-        // أي متغيرات عامة ممكن تحتاجها
-        ZAP_PORT = '8099'
-        MAVEN_TOOL = 'Maven 3.8.8' // تأكد أن الاسم مطابق لتعريفك في Jenkins
+        ZAP_PORT = "8099"
     }
 
     stages {
         stage('Checkout SCM') {
             steps {
-                checkout scm
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']],
+                          userRemoteConfigs: [[url: 'https://github.com/Aziz8124/phoneshope.git']]])
             }
         }
 
         stage('Build') {
             steps {
-                script {
-                    def mvnHome = tool name: "${MAVEN_TOOL}", type: 'maven'
-                    echo "Building the project using Maven..."
-                    bat "${mvnHome}\\bin\\mvn clean package"
-                }
+                echo "Building the project using Maven..."
+                bat 'mvn clean package'
             }
         }
 
         stage('Start ZAP') {
             steps {
-                echo "Starting ZAP DAST scanner..."
-                // تأكد أن Docker يعمل على النظام
-                bat "docker run -d -u zap -p ${ZAP_PORT}:${ZAP_PORT} ghcr.io/zaproxy/zaproxy:stable zap.sh -daemon -port ${ZAP_PORT} -host 0.0.0.0 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true"
-                
-                echo "Waiting 15 seconds for ZAP to initialize..."
-                bat 'C:\\Windows\\System32\\timeout.exe /t 15 /nobreak'
+                script {
+                    // تحقق إذا المنفذ محجوز
+                    def portCheck = bat(script: "powershell -Command \"if (Test-NetConnection -ComputerName 127.0.0.1 -Port $env:ZAP_PORT).TcpTestSucceeded { exit 1 } else { exit 0 }\"", returnStatus: true)
+                    
+                    if (portCheck != 0) {
+                        echo "Port $env:ZAP_PORT is in use. Switching to port 8100"
+                        env.ZAP_PORT = "8100"
+                    }
+
+                    echo "Starting ZAP DAST scanner on port $env:ZAP_PORT..."
+                    bat "docker run -d -u zap -p $env:ZAP_PORT:$env:ZAP_PORT ghcr.io/zaproxy/zaproxy:stable zap.sh -daemon -port $env:ZAP_PORT -host 0.0.0.0 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true"
+                    echo "Waiting 15 seconds for ZAP to initialize..."
+                     bat 'C:\\Windows\\System32\\timeout.exe /t 15 /nobreak'
+                }
             }
         }
 
         stage('DAST Security Scan') {
             steps {
-                echo "Running DAST scan with ZAP..."
-                // هنا ممكن تضيف أوامر الـ ZAP scan حسب حاجتك
+                echo "Running DAST scan..."
+                // ضع أوامر تشغيل ZAP scan هنا، مثال:
+                // bat "docker exec <container_id> zap-cli quick-scan --self-contained --start-options '-config api.disablekey=true' http://localhost:8080"
             }
         }
 
         stage('Test') {
             steps {
                 echo "Running tests..."
-                // إذا عندك أي أوامر لتشغيل الاختبارات
+                bat 'mvn test'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 echo "Running SonarQube analysis..."
-                // أضف هنا أوامر SonarQube scanner إذا عندك
+                withSonarQubeEnv('MySonarQube') {
+                    bat "mvn sonar:sonar -Dsonar.projectKey=phoneshope -Dsonar.host.url=http://localhost:9001 -Dsonar.login=<SONAR_TOKEN>"
+                }
             }
         }
 
         stage('Quality Gate') {
             steps {
-                echo "Checking Quality Gate..."
-                // أضف هنا خطوات التحقق من Quality Gate
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
     }
 
     post {
         success {
-            echo 'Build and DAST scan completed successfully!'
+            echo 'Build completed successfully!'
         }
         failure {
             echo 'Build failed!'
+        }
+        always {
+            echo 'Pipeline finished.'
         }
     }
 }
