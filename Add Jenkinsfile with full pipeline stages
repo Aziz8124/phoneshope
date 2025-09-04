@@ -2,74 +2,57 @@ pipeline {
     agent any
 
     tools {
-        // اسم الـ Maven كما هو معرف في Jenkins
-        maven 'Maven_3.8.8'
-        // اسم JDK كما هو معرف في Jenkins
-        jdk 'Java_17'
+        maven "Maven_3.8.8"
+        jdk "jdk-17"
     }
 
     stages {
         stage('Checkout SCM') {
             steps {
-                echo 'Checking out from Git...'
+                echo "Checking out from Git..."
                 checkout scm
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Building the project using Maven...'
-                // استخدام مسار Maven كما هو معرف في Jenkins
-                bat "\"${tool('Maven_3.8.8')}\\bin\\mvn\" clean package"
-            }
-        }
-
-        stage('Start ZAP') {
-            steps {
-                echo 'Starting ZAP DAST scanner...'
-                // تشغيل Docker ZAP على منفذ 8090 لتجنب التعارض
-                bat 'docker run -d -u zap -p 8090:8090 ghcr.io/zaproxy/zaproxy:stable zap.sh -daemon -port 8090 -host 0.0.0.0 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true'
-            }
-        }
-
-        stage('DAST Security Scan') {
-            steps {
-                echo 'Running DAST Security Scan...'
-                // هنا ممكن تضيف أمر ZAP CLI أو curl لتشغيل الفحص
-            }
-        }
-
-        stage('Test') {
-            steps {
-                echo 'Running tests...'
-                bat "\"${tool('Maven_3.8.8')}\\bin\\mvn\" test"
+                echo "Building the project using Maven..."
+                bat '"%MAVEN_HOME%\\bin\\mvn" clean package'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                echo 'Running SonarQube analysis...'
-                bat "\"${tool('Maven_3.8.8')}\\bin\\mvn\" sonar:sonar"
+                echo "Running SonarQube analysis..."
+                withSonarQubeEnv('MySonarQube') {
+                    bat "\"%MAVEN_HOME%\\bin\\mvn\" sonar:sonar -Dsonar.projectKey=phoneshope -Dsonar.host.url=http://localhost:9090 -Dsonar.login=SONAR_TOKEN"
+                }
             }
         }
 
         stage('Quality Gate') {
             steps {
-                echo 'Checking Quality Gate...'
-                // يمكن إضافة خطوات التحقق من حالة Quality Gate هنا
+                echo "Waiting for SonarQube Quality Gate result..."
+                timeout(time: 1, unit: 'HOURS') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo "Running unit tests..."
+                bat '"%MAVEN_HOME%\\bin\\mvn" test'
             }
         }
     }
 
     post {
         always {
-            echo 'Pipeline finished.'
-        }
-        success {
-            echo 'Build succeeded!'
+            echo "Pipeline finished."
         }
         failure {
-            echo 'Build failed!'
+            echo "Build failed!"
         }
     }
 }
