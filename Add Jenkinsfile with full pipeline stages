@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // تأكد إنو هذا الـ ID مطابق للـ Credential في Jenkins
         SONAR_TOKEN = credentials('SONAR_TOKEN')
     }
 
@@ -49,6 +48,17 @@ pipeline {
                 bat "\"${tool 'Maven_3.8.8'}\\bin\\mvn\" test"
             }
         }
+
+        stage('DAST Scan') {
+            steps {
+                echo 'Starting ZAP DAST scan...'
+                // إنشاء المجلد لو ما موجود
+                bat 'mkdir "C:\\Users\\azozs\\Desktop\\PhoneShope_Final\\reports" || echo Folder exists'
+                // تشغيل ZAP Baseline Scan
+                bat 'docker run -v "C:\\Users\\azozs\\Desktop\\PhoneShope_Final":/zap/wrk:rw -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://host.docker.internal:9000 -r reports/zap_report.html'
+                echo 'DAST report saved at C:\\Users\\azozs\\Desktop\\PhoneShope_Final\\reports\\zap_report.html'
+            }
+        }
     }
 
     post {
@@ -56,10 +66,10 @@ pipeline {
             echo 'Pipeline finished.'
         }
         success {
-            echo 'Build succeeded!'
+            echo 'Build and scans succeeded!'
         }
         failure {
-            echo 'Build failed!'
+            echo 'Build or scan failed!'
         }
     }
 }
