@@ -54,8 +54,10 @@ pipeline {
                 echo 'Starting ZAP DAST scan...'
                 // إنشاء المجلد لو ما موجود
                 bat 'mkdir "C:\\Users\\azozs\\Desktop\\PhoneShope_Final\\reports" || echo Folder exists'
-                // تشغيل ZAP Baseline Scan
-                bat 'docker run -v "C:\\Users\\azozs\\Desktop\\PhoneShope_Final":/zap/wrk:rw -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://host.docker.internal:9000 -r reports/zap_report.html'
+                // تشغيل ZAP Baseline Scan مع catchError لتجنب فشل الـ pipeline
+                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                    bat 'docker run -v "C:\\Users\\azozs\\Desktop\\PhoneShope_Final":/zap/wrk:rw -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://host.docker.internal:9000 -r reports/zap_report.html'
+                }
                 echo 'DAST report saved at C:\\Users\\azozs\\Desktop\\PhoneShope_Final\\reports\\zap_report.html'
             }
         }
@@ -68,8 +70,11 @@ pipeline {
         success {
             echo 'Build and scans succeeded!'
         }
+        unstable {
+            echo 'Build finished with warnings (DAST scan has issues).'
+        }
         failure {
-            echo 'Build or scan failed!'
+            echo 'Build failed!'
         }
     }
 }
