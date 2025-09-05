@@ -1,39 +1,43 @@
 pipeline {
     agent any
 
+    environment {
+        // تأكد إنو هذا الـ ID مطابق للـ Credential في Jenkins
+        SONAR_TOKEN = credentials('SONAR_TOKEN')
+    }
+
     tools {
-        maven "Maven_3.8.8"
-        jdk "Java_17"
+        maven 'Maven_3.8.8'
+        jdk 'Java_17'
     }
 
     stages {
         stage('Checkout SCM') {
             steps {
-                echo "Checking out from Git..."
+                echo 'Checking out from Git...'
                 checkout scm
             }
         }
 
         stage('Build') {
             steps {
-                echo "Building the project using Maven..."
-                bat '"%MAVEN_HOME%\\bin\\mvn" clean package'
+                echo 'Building the project using Maven...'
+                bat "\"${tool 'Maven_3.8.8'}\\bin\\mvn\" clean package"
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                echo "Running SonarQube analysis..."
+                echo 'Running SonarQube analysis...'
                 withSonarQubeEnv('MySonarQube') {
-                    bat "\"%MAVEN_HOME%\\bin\\mvn\" sonar:sonar -Dsonar.projectKey=phoneshope -Dsonar.host.url=http://localhost:9090 -Dsonar.login=SONAR_TOKEN"
+                    bat "\"${tool 'Maven_3.8.8'}\\bin\\mvn\" sonar:sonar -Dsonar.projectKey=phoneshope -Dsonar.host.url=http://localhost:9090 -Dsonar.login=${env.SONAR_TOKEN}"
                 }
             }
         }
 
         stage('Quality Gate') {
             steps {
-                echo "Waiting for SonarQube Quality Gate result..."
-                timeout(time: 1, unit: 'HOURS') {
+                timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
@@ -41,18 +45,21 @@ pipeline {
 
         stage('Test') {
             steps {
-                echo "Running unit tests..."
-                bat '"%MAVEN_HOME%\\bin\\mvn" test'
+                echo 'Running tests...'
+                bat "\"${tool 'Maven_3.8.8'}\\bin\\mvn\" test"
             }
         }
     }
 
     post {
         always {
-            echo "Pipeline finished."
+            echo 'Pipeline finished.'
+        }
+        success {
+            echo 'Build succeeded!'
         }
         failure {
-            echo "Build failed!"
+            echo 'Build failed!'
         }
     }
 }
